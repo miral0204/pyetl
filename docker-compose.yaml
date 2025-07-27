@@ -1,0 +1,126 @@
+version: '3.8'
+
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.8.1-python3.9
+  environment:
+    AIRFLOW_HOME: /opt/airflow
+    AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
+    AIRFLOW__CORE__FERNET_KEY: 'jBD6ovPtSQgqyfyKsv5RexRcgvWabjPqNDKAxtMDnKs=' # IMPORTANT: Ensure your generated Fernet key is here!
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@airflow-db/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://redis:6379/0
+    # Database connection for our ETL script
+    DB_HOST: retail-db # This refers to our dedicated retail database container
+    DB_NAME: retail_sales_db
+    DB_USER: postgres
+    DB_PASSWORD: postgres # Use a strong password!
+    DB_PORT: 5432
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./scripts:/opt/airflow/scripts
+    - ./data:/opt/airflow/data
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+  depends_on:
+    airflow-db:
+      condition: service_healthy
+    retail-db: # Depend on our retail database as well
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  networks:
+    - airflow_network
+
+services:
+  airflow-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_network
+    volumes: # <<< --- NEW VOLUME DEFINITION --- >>>
+      - airflow_db_data:/var/lib/postgresql/data # Mount the named volume
+
+  retail-db: # Our dedicated database for retail sales data
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres # Use a strong password!
+      POSTGRES_DB: retail_sales_db # Pre-create the database
+    ports:
+      - "5432:5432" # Map to host port 5432 for Power BI connection
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d retail_sales_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_network
+
+  redis:
+    image: redis:latest
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_network
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: airflow-init
+    entrypoint: /bin/bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true"
+    healthcheck:
+      test: ["CMD-SHELL", "airflow users list | grep admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - airflow_network
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: airflow-webserver
+    command: airflow webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    networks:
+      - airflow_network
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: airflow-scheduler
+    command: airflow scheduler
+    networks:
+      - airflow_network
+
+  airflow-worker:
+    <<: *airflow-common
+    container_name: airflow-worker
+    command: airflow celery worker # <<< --- CHANGE THIS LINE --- >>>
+    networks:
+      - airflow_network
+
+networks:
+  airflow_network:
+    driver: bridge
+
+volumes: # <<< --- NEW VOLUMES SECTION --- >>>
+  airflow_db_data: # Define the named volume

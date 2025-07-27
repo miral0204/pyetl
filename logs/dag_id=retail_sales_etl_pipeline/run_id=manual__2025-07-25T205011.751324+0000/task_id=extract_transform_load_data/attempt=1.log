@@ -1,0 +1,33 @@
+[2025-07-25T20:50:13.666+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: retail_sales_etl_pipeline.extract_transform_load_data manual__2025-07-25T20:50:11.751324+00:00 [queued]>
+[2025-07-25T20:50:13.677+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: retail_sales_etl_pipeline.extract_transform_load_data manual__2025-07-25T20:50:11.751324+00:00 [queued]>
+[2025-07-25T20:50:13.678+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2025-07-25T20:50:13.692+0000] {taskinstance.py:2191} INFO - Executing <Task(PythonOperator): extract_transform_load_data> on 2025-07-25 20:50:11.751324+00:00
+[2025-07-25T20:50:13.702+0000] {standard_task_runner.py:60} INFO - Started process 53 to run task
+[2025-07-25T20:50:13.706+0000] {standard_task_runner.py:87} INFO - Running: ['***', 'tasks', 'run', 'retail_sales_etl_pipeline', 'extract_transform_load_data', 'manual__2025-07-25T20:50:11.751324+00:00', '--job-id', '6', '--raw', '--subdir', 'DAGS_FOLDER/retail_sales_dag.py', '--cfg-path', '/tmp/tmppjl194wz']
+[2025-07-25T20:50:13.710+0000] {standard_task_runner.py:88} INFO - Job 6: Subtask extract_transform_load_data
+[2025-07-25T20:50:14.897+0000] {task_command.py:423} INFO - Running <TaskInstance: retail_sales_etl_pipeline.extract_transform_load_data manual__2025-07-25T20:50:11.751324+00:00 [running]> on host a49d5ae705d7
+[2025-07-25T20:50:15.030+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='retail_sales_etl_pipeline' AIRFLOW_CTX_TASK_ID='extract_transform_load_data' AIRFLOW_CTX_EXECUTION_DATE='2025-07-25T20:50:11.751324+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-07-25T20:50:11.751324+00:00'
+[2025-07-25T20:50:15.034+0000] {logging_mixin.py:188} INFO - Starting ETL process...
+[2025-07-25T20:50:15.863+0000] {logging_mixin.py:188} INFO - Successfully loaded data from /opt/***/data/raw/sales_data.csv. Shape: (99457, 10)
+[2025-07-25T20:50:15.864+0000] {logging_mixin.py:188} INFO - Performing data transformations...
+[2025-07-25T20:50:16.160+0000] {logging_mixin.py:188} INFO - Data transformation complete. Sample data after transformation:
+[2025-07-25T20:50:16.179+0000] {logging_mixin.py:188} INFO -    transaction_id customer_id  ... total_amount  total_sales_per_order
+0         I138884     C241288  ...      7502.00                7502.00
+1         I317333     C111565  ...      5401.53                5401.53
+2         I127801     C266599  ...       300.08                 300.08
+8         I293455     C159642  ...      2700.72                2700.72
+14        I336189     C555402  ...      1200.32                1200.32
+
+[5 rows x 12 columns]
+[2025-07-25T20:50:16.180+0000] {logging_mixin.py:188} INFO - 
+DataFrame columns after transformation:
+[2025-07-25T20:50:16.181+0000] {logging_mixin.py:188} INFO - Index(['transaction_id', 'customer_id', 'gender', 'age', 'product_category',
+       'quantity', 'price_per_unit', 'payment_method', 'date', 'shopping_mall',
+       'total_amount', 'total_sales_per_order'],
+      dtype='object')
+[2025-07-25T20:50:16.182+0000] {logging_mixin.py:188} INFO - Loading data into PostgreSQL...
+[2025-07-25T20:50:20.268+0000] {logging_mixin.py:188} INFO - Data successfully loaded into 'sales_data' table in PostgreSQL.
+[2025-07-25T20:50:20.273+0000] {python.py:201} INFO - Done. Returned value was: None
+[2025-07-25T20:50:20.287+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=retail_sales_etl_pipeline, task_id=extract_transform_load_data, execution_date=20250725T205011, start_date=20250725T205013, end_date=20250725T205020
+[2025-07-25T20:50:20.360+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2025-07-25T20:50:20.378+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check
